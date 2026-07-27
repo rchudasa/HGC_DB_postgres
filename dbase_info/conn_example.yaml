@@ -1,7 +1,7 @@
 dbname: 'hgcdb'
 port: '5432'
 db_hostname: 'localhost'     ## update this if accessing from a different computer
-institution_abbr: ''         ## update this: CMU, IHEP, NTU, TTU, TIFR, UCSB
+institution_abbr: 'FNAL'         ## update this: CMU, IHEP, NTU, TTU, TIFR, UCSB
 php_port: 8083
 
 git_auto_pull: True          ## Set to True to `git pull` everytime the project is run

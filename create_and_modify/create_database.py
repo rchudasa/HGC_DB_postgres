@@ -16,7 +16,7 @@ args = parser.parse_args()
 
 loc = 'dbase_info'
 tables_subdir = 'postgres_tables'
-table_yaml_file = os.path.join(loc, 'tables.yaml')
+table_yaml_file = os.path.join(loc, 'tables_fnal.yaml')
 conn_yaml_file = os.path.join(loc, 'conn.yaml')
 conn_info = yaml.safe_load(open(conn_yaml_file, 'r'))
 db_params = {
@@ -32,7 +32,8 @@ else:
         print("Encryption key not provided. Exiting..."); exit()
     cipher_suite = Fernet((args.encrypt_key).encode())
     dbpassword = cipher_suite.decrypt( base64.urlsafe_b64decode(args.password)).decode() ## Decode base64 to get encrypted string and then decrypt
-    db_params.update({'password': dbpassword})
+
+db_params.update({'password': dbpassword})
 
 user_password = args.userpass
 if user_password is None:
@@ -45,6 +46,7 @@ if viewer_password is None:
 async def create_db():
     print("Creating a new database...")
     # Connect to the default PostgreSQL database
+    print(f"Connecting to default database with parameters: {db_params}")
     default_conn = await asyncpg.connect(**db_params)
 
     # Create a new database

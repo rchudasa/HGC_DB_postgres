@@ -1,0 +1,67 @@
+users: 
+  -
+    username: 'viewer'
+    description: 'View tables'
+    ip_address: ''
+
+  -
+    username: 'teststand_user'
+    description: 'Electrical Test stand'
+    ip_address: ''
+
+  -
+    username: 'shipper'
+    description: 'Shipping and Receiving station'
+    ip_address: ''
+
+  -
+    username: 'editor'
+    description: 'Global write permissons'
+    ip_address: ''
+
+tables:
+  - 
+    fname: 'module_iv_test.csv' 
+    description: 'performed by the electrical testing setup'
+    permission:
+      'viewer': 'SELECT'
+      'teststand_user':  'INSERT, SELECT, UPDATE'
+      'shipper':  'SELECT, UPDATE'
+      'editor': 'INSERT, UPDATE, DELETE, SELECT'
+
+  - 
+    fname: 'module_pedestal_test.csv' 
+    description: 'performed by the electrical testing setup'
+    permission:
+      'viewer': 'SELECT'
+      'teststand_user':  'INSERT, SELECT, UPDATE'
+      'shipper':  'SELECT, UPDATE'
+      'editor': 'INSERT, UPDATE, DELETE, SELECT'
+
+  - 
+    fname: 'module_ileak_estimate.csv' 
+    description: 'estimate of channel-by-channel leakage current estimate performed for modules observed with high leakage current; outputs updated config json to be used for further electrical testing'
+    permission:
+      'viewer': 'SELECT'
+      'teststand_user':  'INSERT, SELECT, UPDATE'
+      'shipper':  'SELECT, UPDATE'
+      'editor': 'INSERT, UPDATE, DELETE, SELECT'
+
+  - 
+    fname: 'module_pedestal_plots.csv'
+    description: 'Will store both module and hexaboard pedestal plots'
+    permission:
+      'viewer': 'SELECT'
+      'teststand_user':  'INSERT, SELECT, UPDATE'
+      'shipper':  'SELECT, UPDATE'
+      'editor': 'INSERT, UPDATE, DELETE, SELECT'
+
+  - 
+    fname: 'temp_humidity.csv' 
+    description: 'For lab enviroment temperature and humidity'
+    permission:
+      'viewer': 'SELECT'
+      'teststand_user':  'SELECT'
+      'shipper':  'INSERT, SELECT'
+      'editor': 'INSERT, UPDATE, DELETE, SELECT'
+

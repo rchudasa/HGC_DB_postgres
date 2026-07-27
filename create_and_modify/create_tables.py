@@ -13,7 +13,7 @@ print('Creating tables in the database...')
 # Database connection parameters
 loc = 'dbase_info'
 tables_subdir = 'postgres_tables'
-table_yaml_file = os.path.join(loc, 'tables.yaml')
+table_yaml_file = os.path.join(loc, 'tables_fnal.yaml')
 conn_yaml_file = os.path.join(loc, 'conn.yaml')
 conn_info = yaml.safe_load(open(conn_yaml_file, 'r'))
 db_params = {
