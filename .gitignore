@@ -48,3 +48,4 @@ export_data/xmls_for_upload/
 export_data/mass_upload_logs/
 export_data/dbloader_logs/
 shipping/
+manual_upload_data/configuration.yaml

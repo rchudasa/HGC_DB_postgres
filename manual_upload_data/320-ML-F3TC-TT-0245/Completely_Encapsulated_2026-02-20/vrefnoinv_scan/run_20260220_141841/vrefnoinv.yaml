@@ -1,0 +1,21 @@
+roc_s0:
+  sc:
+    ReferenceVoltage:
+      0:
+        Noinv_vref: 204
+      1:
+        Noinv_vref: 174
+roc_s1:
+  sc:
+    ReferenceVoltage:
+      0:
+        Noinv_vref: 264
+      1:
+        Noinv_vref: 226
+roc_s2:
+  sc:
+    ReferenceVoltage:
+      0:
+        Noinv_vref: 189
+      1:
+        Noinv_vref: 217

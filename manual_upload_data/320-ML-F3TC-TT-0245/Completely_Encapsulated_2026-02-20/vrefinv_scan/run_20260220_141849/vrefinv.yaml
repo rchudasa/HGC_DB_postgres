@@ -1,0 +1,21 @@
+roc_s0:
+  sc:
+    ReferenceVoltage:
+      0:
+        Inv_vref: 440
+      1:
+        Inv_vref: 436
+roc_s1:
+  sc:
+    ReferenceVoltage:
+      0:
+        Inv_vref: 437
+      1:
+        Inv_vref: 454
+roc_s2:
+  sc:
+    ReferenceVoltage:
+      0:
+        Inv_vref: 454
+      1:
+        Inv_vref: 444

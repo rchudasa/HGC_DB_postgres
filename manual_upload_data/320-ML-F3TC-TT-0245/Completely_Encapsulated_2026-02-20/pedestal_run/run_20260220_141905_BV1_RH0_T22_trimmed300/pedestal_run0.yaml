@@ -1,0 +1,10 @@
+metaData:
+  Channel_off: []
+  characMode: 1
+  chip_params: {}
+  hexactrl: 192.168.1.144
+  hw_type: LD
+  keepRawData: 1
+  keepSummary: 1
+  selTC4: 1
+  testName: pedestal_run

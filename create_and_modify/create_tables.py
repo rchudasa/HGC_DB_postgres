@@ -25,6 +25,7 @@ db_params = {
 
 if args.password is None:
     dbpassword = pwinput.pwinput(prompt='Enter superuser password: ', mask='*')
+    db_params.update({'password': dbpassword})
 else:
     if args.encrypt_key is None:
         print("Encryption key not provided. Exiting..."); exit()
@@ -125,8 +126,8 @@ async def create_tables_sequence():
                 print('\n')
 
         print("Granting UPDATE permission to teststand_user for front_wirebond.wb_fr_marked_done.")
-        front_wirebond_done_query = "GRANT UPDATE (wb_fr_marked_done) ON front_wirebond TO teststand_user;"
-        await conn.execute(front_wirebond_done_query)
+        #front_wirebond_done_query = "GRANT UPDATE (wb_fr_marked_done) ON front_wirebond TO teststand_user;"
+        #await conn.execute(front_wirebond_done_query)
 
     except asyncpg.PostgresError as e:
         print("Error:", e)

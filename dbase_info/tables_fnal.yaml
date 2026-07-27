@@ -21,6 +21,15 @@ users:
 
 tables:
   - 
+    fname: 'module_info.csv'
+    description: 'Entry created when a module comes into existence and tracks all assembly steps thereafter'
+    permission:
+      'viewer': 'SELECT'
+      'teststand_user':  'INSERT, SELECT, UPDATE'
+      'shipper':  'INSERT, SELECT, UPDATE'
+      'editor': 'INSERT, UPDATE, DELETE, SELECT'
+
+  - 
     fname: 'module_iv_test.csv' 
     description: 'performed by the electrical testing setup'
     permission:
