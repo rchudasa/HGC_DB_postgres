@@ -3,14 +3,7 @@ Stripped-down upload script for manually backfilling data collected before the
 database was set up. Keeps only what's needed to push existing local data
 (IV curves, pedestal test runs, pedestal plots, module_info) into Postgres.
 
-Removed vs. the original: all PySimpleGUI/live-acquisition code, RH/T sensor
-polling (add_RH_T), other_test_upload, summary_upload, bonding instructions,
-trophy/mezzanine tracking, and all the readout_info/iv_info grading logic
-(unconnected/dead/noisy-cell analysis) — none of that touches these four
-tables, it's downstream analysis that reads *from* the DB after upload.
 
-Fill in the __main__ block (or import these functions directly) to point at
-wherever your manually-saved .pkl / .root / .png files actually live.
 """
 
 import glob
@@ -133,10 +126,8 @@ def module_info_upload(moduleserial):
         'institution': 'FNAL'
     }   
 
-    #df_data = add_mapping(df_data, hb_type=hb_type)
-    #print("Moule info:" , moduleserial, " density", density, " shape", shape, " sen_thickness", sen_thickness, " hb_type", hb_type)
     result = run_async(upload_PostgreSQL(table_name='module_info', db_upload_data=db_upload))
-    #print(f"   >> DBTools: Uploaded module_info (name only) for {moduleserial}")
+    print(f"   >> DBTools: Uploaded module_info (name only) for {moduleserial}")
     return result
 
 def module_info_update_test_date(moduleserial, field, test_date, time_field, test_time):
@@ -198,8 +189,6 @@ def json_iv_upload(path, moduleserial, modulestatus, inspector, comment=None):
         module_info_update_test_date(moduleserial, 'test_iv', converted_datetime.date(), 'test_iv_time', converted_datetime.time())
         return result
 
-
-
     elif fileName.endswith('.txt'):
         print('it is txt file', "Module Name", moduleserial, "fileName", fileName)
         with open(fileName, 'r') as f:
@@ -213,8 +202,12 @@ def json_iv_upload(path, moduleserial, modulestatus, inspector, comment=None):
                 'module_name': moduleserial,
                 'program_v': df['program_v'].tolist(),
                 'meas_i': df['meas_i'].tolist(),
+                'status': statusdict[modulestatus],
+                'status_desc': modulestatus,
                 'date_test': converted_datetime.date(),
                 'time_test': converted_datetime.time(),
+                'inspector': inspector,
+                'comment': "txt file format, no humidity or temperature info available"
             }
         result = run_async(upload_PostgreSQL(table_name='module_iv_test', db_upload_data=db_upload_iv))
         print(f"   >> DBTools: Uploaded IV curve of {moduleserial}")
@@ -382,7 +375,7 @@ def batch_pedestal_upload(basepath, moduleserial, modulestatus, inspector):
         #if(rundir.endswith('trimmed300') and 'BV300' in rundir):
         print(f"   >> DBTools: Uploading pedestal run from {rundir} for {moduleserial}")
         pedestal_upload(rundir, moduleserial, modulestatus, inspector, comment="Command Line test cotains trimmed and untrimmed pedestal runs")
-        #module_info_upload(rundir, moduleserial)
+       
 
 
 # ---------------------------------------------------------------------------
@@ -406,18 +399,19 @@ def find_hexpath_prefix(outdir, moduleserial):
 def plots_upload(rundir, moduleserial, modulestatus, inspector,
                   trimval=None, comment=None):
 
-    hexpath_prefix = find_hexpath_prefix(rundir, moduleserial)
-    print(hexpath_prefix)
-    hexpaths = glob.glob(f'{hexpath_prefix}_*.png')
-    hexmean = hexstdd = None
-    for path in hexpaths:
-        compress_png(path)
-        if 'mean' in path:
-            with open(path, 'rb') as f:
-                hexmean = f.read()
-        elif 'stdd' in path:
-            with open(path, 'rb') as f:
-                hexstdd = f.read()
+    #relevant only for GUI based data upload
+    # hexpath_prefix = find_hexpath_prefix(rundir, moduleserial)
+    # print(hexpath_prefix)
+    # hexpaths = glob.glob(f'{hexpath_prefix}_*.png')
+    # hexmean = hexstdd = None
+    # for path in hexpaths:
+    #     compress_png(path)
+    #     if 'mean' in path:
+    #         with open(path, 'rb') as f:
+    #             hexmean = f.read()
+    #     elif 'stdd' in path:
+    #         with open(path, 'rb') as f:
+    #             hexstdd = f.read()
 
     noise = [open(p, 'rb').read() for p in glob.glob(rundir + '/noise_vs_channel_chip*.png')]
     pedestal = [open(p, 'rb').read() for p in glob.glob(rundir + '/pedestal_vs_channel_chip*.png')]
@@ -427,16 +421,17 @@ def plots_upload(rundir, moduleserial, modulestatus, inspector,
         'module_name': moduleserial,
         'status': statusdict[modulestatus],
         'status_desc': modulestatus,
-        'adc_mean_hexmap': hexmean,
-        'adc_std_hexmap': hexstdd,
+        #'adc_mean_hexmap': hexmean,
+        #'adc_std_hexmap': hexstdd,
         'noise_channel_chip': noise,
         'pedestal_channel_chip': pedestal,
         'total_noise_chip': totnoise,
-        'trim_bias_voltage': trimval,
+        #'trim_bias_voltage': trimval,
         'inspector': inspector,
-        'comment_plot_test': comment,
+        'comment_plot_test': "data collected from command line test, contains trimmed and untrimmed pedestal runs",
     }
 
+    print("noise type", type(noise), noise)
     result = run_async(upload_PostgreSQL(table_name='module_pedestal_plots', db_upload_data=db_upload_plots))
     print(f"   >> DBTools: Uploaded pedestal plots of {moduleserial}")
     return result
@@ -454,33 +449,49 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     args.status = args.status if args.status is not None else 'Completely Encapsulated'
-    uploadIV_DirList = getDirList('/home/rchudasa/bias_supply_monitor/')
-    #print(list(uploadIV_DirList))
-    #print("Directory count:", len(list(uploadIV_DirList)), "Unique modules:", ((i[1] for i in uploadIV_DirList)))
-    count = 0
 
-    for i in uploadIV_DirList:
-        print(f"IV Directory:{i[0]} , Module Names:{i[1]}")
-        moduleName = i[1]
-        moduleName = moduleName.replace('-', '') if '-' in moduleName else moduleName
-        json_iv_upload(i[0], moduleName, args.status, args.inspector)
-        count +=1
-        #if count > 2:
-        break
-        
-     
-    #args.module = args.module.replace('-', '')
-    #print("Module", args.module)
+
+    #----------------------- never run this code ----------------------------
+    # uploadModule_list = getDirList('/home/rchudasa/module_test/hexactrl-script/')
+    # zipped = list(uploadModule_list)  # materialize it since zip is single-use
+
+    # seen = set()
+    # unique_entries = []
+    # for path, name in zipped:
+    #     name = name.replace('-', '') if '-' in name else name
+    #     if name not in seen:
+    #         seen.add(name)
+    #         unique_entries.append(name)
+
+    # print(f"{len(zipped)} total entries, {len(unique_entries)} unique modules")
+    # print("Unique module names:", unique_entries)
+
+    # for name in unique_entries:
+    #     module_info_upload(name)
+
+
+
+    # uploadIV_DirList = getDirList('/home/rchudasa/bias_supply_monitor/')
     
+    # for i in uploadIV_DirList:
+    #     print(f"IV Directory:{i[0]} , Module Names:{i[1]}")
+    #     moduleName = i[1]
+    #     moduleName = moduleName.replace('-', '') if '-' in moduleName else moduleName
+    #     json_iv_upload(i[0], moduleName, args.status, args.inspector)
+      
+            
     # uploadPedestal_DirList = getDirList('/home/rchudasa/module_test/hexactrl-script/')
+
     # for i in uploadPedestal_DirList:
     #     print(f"Pedestal Directory:{i[0]} , Module Names:{i[1]}")
     #     moduleName = i[1]
     #     moduleName = moduleName.replace('-', '') if '-' in moduleName else moduleName
-    #     module_info_upload(moduleName)
-    #     #batch_pedestal_upload(i[0],moduleName, args.status, args.inspector)
-    #     #break
+    #     batch_pedestal_upload(i[0],moduleName, args.status, args.inspector)
+    #     plots_upload(i[0], moduleName, args.status, args.inspector)
+        
+        
+    
     # Fill these in / loop over your saved data as needed, e.g.:
     
     #iv_upload_from_pkl('/home/rchudasa/data/320-ML-F3TC-TT-0245/Completely_Encapsulated_2026-02-20/320-ML-F3TC-TT-0245_IVset_2026-02-20_142134_None.pkl', args.module, args.status, args.inspector)
-    #plots_upload('/home/rchudasa/data/320-ML-F3TC-TT-0245/Completely_Encapsulated_2026-02-20',  args.module, args.status, args.inspector)
+    

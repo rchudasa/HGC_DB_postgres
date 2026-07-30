@@ -104,13 +104,22 @@ def get_query_old(table_name):
     query = f"""{pre_query} {'({})'.format(data_placeholder)}"""
     return query
 
-def get_query(table_name, column_names):
+def get_query(table_name, column_names, upsert_key=None):
     """
     General function for db get queries. Returns formatted query string.
     """
     pre_query = f""" INSERT INTO {table_name} ({', '.join(column_names)}) VALUES  """ 
     data_placeholder = ', '.join(['${}'.format(i) for i in range(1, len(column_names)+1)])
     query = f"""{pre_query} {'({})'.format(data_placeholder)}"""
+
+    if upsert_key is not None and upsert_key in column_names:
+        update_cols = [c for c in column_names if c not in (upsert_key, 'module_no')]
+        if update_cols:  # only add DO UPDATE if there's something besides the key to update
+            set_clause = ', '.join([f"{c} = EXCLUDED.{c}" for c in update_cols])
+            query += f""" ON CONFLICT ({upsert_key}) DO UPDATE SET {set_clause}"""
+        else:
+            query += f""" ON CONFLICT ({upsert_key}) DO NOTHING"""
+
     return query
 
 async def upload_PostgreSQL(table_name, db_upload_data):
@@ -118,6 +127,11 @@ async def upload_PostgreSQL(table_name, db_upload_data):
     General upload function. Instantiates the connection to the database, formats the query, and uploads the data.
     """
     
+    UPSERT_TABLES = {
+        'module_info': 'module_name',
+        # add more here later if other tables need the same one-row-per-part behavior,
+    }
+
     # create db connection
     pool = await _get_pool()
     print(f'     >> Postgres Tools: Connection successful.')
@@ -158,9 +172,16 @@ async def upload_PostgreSQL(table_name, db_upload_data):
             print(f'     >> PostgresTools: upload dictionary is empty, not uploading')
             await conn.close()
             return
-                
+
+        # build query — upsert for tables in UPSERT_TABLES, plain insert otherwise
+        upsert_key = UPSERT_TABLES.get(table_name)
+        if upsert_key is not None and upsert_key not in db_upload_data:
+            print(f'     >> PostgresTools: upsert key {upsert_key} missing from upload data for {table_name}; cannot upsert')
+            await conn.close()
+            return
+               
         # new db uploading scheme
-        query = get_query(table_name, db_upload_data.keys())
+        query = get_query(table_name, db_upload_data.keys(), upsert_key=upsert_key)
         print(f'     >> PostgresTools: Executing query: {query}')
         await conn.execute(query, *db_upload_data.values())
 
